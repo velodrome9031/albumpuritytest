@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Album Purity Test</title>
+  <style>
+    :root {
+      --paper: #ede5d2;
+      --ink: #151515;
+      --muted: #2a3654;
+      --accent: #9d250f;
+      --bg: #f4efd9;
+      --card: #e8e0cc;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, "Times New Roman", serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* LOGIN */
+    #loginScreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .login-card {
+      background: var(--paper);
+      border: 1px solid rgba(108,82,38,0.16);
+      box-shadow: 0 2px 12px rgba(50,34,11,0.08);
+      padding: 48px 40px;
+      width: min(100%, 400px);
+      text-align: center;
+    }
+
+    .login-card h1 {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+      color: var(--accent);
+    }
+
+    .login-card p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    .login-card input {
+      width: 100%;
+      padding: 10px 14px;
+      font: inherit;
+      font-size: 1rem;
+      border: 1px solid #8c8c8c;
+      background: #fbfaf6;
+      margin-bottom: 12px;
+    }
+
+    .login-card input:focus { outline: 2px solid rgba(143,37,20,0.25); }
+
+    .login-card button {
+      width: 100%;
+      padding: 11px;
+      background: #111;
+      color: #fff;
+      border: 1px solid #1b1b1b;
+      font: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .login-card button:hover { background: var(--accent); border-color: var(--accent); }
+
+    .login-error {
+      color: var(--accent);
+      font-size: 0.85rem;
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* DASHBOARD */
+    #dashboard { display: none; padding: 32px 24px 60px; max-width: 1000px; margin: 0 auto; }
+
+    .dash-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      border-bottom: 3px solid var(--ink);
+      padding-bottom: 16px;
+    }
+
+    .dash-header h1 { font-size: 1.8rem; color: var(--accent); }
+    .dash-header span { font-size: 0.8rem; color: var(--muted); }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+
+    .stat-card {
+      background: var(--paper);
+      border: 1px solid rgba(108,82,38,0.16);
+      padding: 20px 24px;
+      text-align: center;
+    }
+
+    .stat-card .num {
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.8rem;
+    }
+
+    /* SCORE DISTRIBUTION */
+    .dist-section { margin-bottom: 36px; }
+    .dist-bar-row {
+      display: grid;
+      grid-template-columns: 120px 1fr 48px;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+    }
+    .dist-label { color: var(--muted); text-align: right; }
+    .dist-bar-wrap { background: var(--card); height: 22px; position: relative; }
+    .dist-bar { background: var(--accent); height: 100%; transition: width 0.6s ease; }
+    .dist-count { color: var(--ink); font-weight: 700; }
+
+    /* QUESTIONS */
+    .questions-section { margin-bottom: 36px; }
+    .q-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .q-tab {
+      padding: 6px 16px;
+      font: inherit;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid #1b1b1b;
+      background: transparent;
+      color: var(--ink);
+    }
+    .q-tab.active { background: var(--ink); color: #fff; }
+
+    .q-row {
+      display: grid;
+      grid-template-columns: 1fr 80px 120px;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+      font-size: 0.85rem;
+    }
+    .q-row:first-child { border-top: 1px solid rgba(0,0,0,0.07); }
+    .q-num { color: var(--muted); font-size: 0.75rem; }
+    .q-pct { text-align: right; font-weight: 700; color: var(--accent); }
+    .q-bar-wrap { background: var(--card); height: 8px; }
+    .q-bar { background: var(--accent); height: 100%; }
+
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    #refreshBtn {
+      padding: 8px 20px;
+      background: transparent;
+      border: 1px solid var(--ink);
+      font: inherit;
+      font-size: 0.8rem;
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    #refreshBtn:hover { background: var(--ink); color: #fff; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>Album Purity Test</h1>
+    <p>Private Dashboard — Enter password to continue</p>
+    <input type="password" id="passwordInput" placeholder="Password" />
+    <button id="loginBtn">Enter</button>
+    <div class="login-error" id="loginError">Incorrect password.</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="dash-header">
+    <h1>Dashboard</h1>
+    <button id="refreshBtn">↻ Refresh</button>
+  </div>
+
+  <div id="loadingMsg" class="loading">Loading data...</div>
+
+  <div id="dashContent" style="display:none">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="num" id="statTotal">—</div><div class="label">Tests Taken</div></div>
+      <div class="stat-card"><div class="num" id="statAvg">—</div><div class="label">Average Score</div></div>
+      <div class="stat-card"><div class="num" id="statHigh">—</div><div class="label">Highest Score</div></div>
+      <div class="stat-card"><div class="num" id="statLow">—</div><div class="label">Lowest Score</div></div>
+      <div class="stat-card"><div class="num" id="statMedian">—</div><div class="label">Median Score</div></div>
+    </div>
+
+    <div class="dist-section">
+      <div class="section-title">Score Distribution</div>
+      <div id="distBars"></div>
+    </div>
+
+    <div class="questions-section">
+      <div class="section-title">Questions</div>
+      <div class="q-tabs">
+        <button class="q-tab active" id="tabMost" onclick="showTab('most')">Most Checked</button>
+        <button class="q-tab" id="tabLeast" onclick="showTab('least')">Least Checked</button>
+        <button class="q-tab" id="tabAll" onclick="showTab('all')">All Questions</button>
+      </div>
+      <div id="questionsList"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+  const PASSWORD = "Jigujajiguja2@";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCSpAHM1filCLSmU4WjWWMowj9LsEykVc8",
+    authDomain: "albumpuritytest.firebaseapp.com",
+    projectId: "albumpuritytest",
+    storageBucket: "albumpuritytest.firebasestorage.app",
+    messagingSenderId: "254155293464",
+    appId: "1:254155293464:web:b680a06ab6fda2fc5a546d"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const prompts = [
+    "Have listened to at least 10 albums?",
+    "Have listened to at least 100 albums?",
+    "Have listened to at least 1000 albums?",
+    "Have listened to at least 10000 albums?",
+    "Have listened to at least 3 albums in a single day?",
+    "Have listened to at least 10 albums in a single day?",
+    "Have listened to an album because of your parents?",
+    "Have listened to an album just because it had a cool cover?",
+    "Have listened to an album because a friend told you to?",
+    "Have listened to an album just because your crush likes it?",
+    "Have listened to an album just to fit in a group of people?",
+    "Have listened to an album only to impress someone else?",
+    "Have listened to an album just because someone online wouldn't stop talking about it?",
+    "Have listened to an album because of TikTok?",
+    "Have listened to an album because of YouTube?",
+    "Have listened to an album because of a music website?",
+    "Have listened to an album because of a meme?",
+    "Have listened to an album because it was controversial?",
+    "Have pretended to like an album more than you really did?",
+    "Have listened to an album solely because of one song?",
+    "Have listened to an album knowing you were going to hate it?",
+    "Have listened to an album under 20 minutes long?",
+    "Have listened to an album over 100 minutes long?",
+    "Have listened to an album over 3 hours long?",
+    "Have listened to a live album?",
+    "Have listened to a soundtrack album?",
+    "Have listened to a compilation album?",
+    "Have listened to an album in reverse?",
+    "Have abandoned an album halfway through?",
+    "Have forced yourself to finish an album you disliked?",
+    "Relistened to an album?",
+    "Have relistened to the same album at least 5 times?",
+    "Forced yourself to relisten to an album just to understand it?",
+    "Have changed your opinion completely on an album after relistening?",
+    "Have listened to an album in at least 10 different genres?",
+    "Have listened to an album in a language other than English or your native language?",
+    "Have listened to an album from each decade starting with the 60s?",
+    "Have listened to an album from every year of your life?",
+    "Have listened to an album from every continent except Antarctica?",
+    "Have listened to the entire discography of an artist that has released at least 10 albums?",
+    "Have listened to at least an album every single day for a year?",
+    "Have spent 24 hours straight listening to albums?",
+    "Have heard an artist perform most of an album live in person?",
+    "Have listened to an album while running?",
+    "Have listened to an album during a long trip?",
+    "Have listened to an album on a plane?",
+    "Have listened to an album while walking alone at night?",
+    "Have listened to an album with a friend from start to finish?",
+    "Have listened to an album with headphones in complete darkness?",
+    "Have fallen asleep while listening to an album?",
+    "Have studied while listening to an album?",
+    "Have worked while listening to an album?",
+    "Have listened to an album just to procrastinate?",
+    "Have stayed up all night just to listen to a new album?",
+    "Missed an important event because of an album release?",
+    "Cried to an album?",
+    "Have listened to an album while drunk?",
+    "Have listened to an album while high?",
+    "Got aroused while listening to an album?",
+    "Had sex while listening to an album?",
+    "Bought or acquired an album?",
+    "Bought or acquired at least 10 albums?",
+    "Bought or acquired at least 100 albums?",
+    "Received an album as a gift?",
+    "Bought an album on Bandcamp?",
+    "Owned an album on CD?",
+    "Owned an album on vinyl?",
+    "Owned an album on cassette?",
+    "Owned an album in at least 3 different formats?",
+    "Owned a vinyl player?",
+    "Have pre-saved or pre-ordered an album?",
+    "Have listened to an album on at least 3 different streaming platforms?",
+    "Have rated an album on a music rating website?",
+    "Have changed an album rating more than once?",
+    "Have ranked the tracks on an album?",
+    "Written a review of an album online?",
+    "Have made an album topster/chart?",
+    "Have memorized the tracklist of an album?",
+    "Have known the lyrics to every song on an album?",
+    "Have looked up the meaning or concept behind an album?",
+    "Have watched a video about an album to understand it better?",
+    "Have listened to two versions of the same album mix/master?",
+    "Listened to an album on different headphones/speakers to compare it?",
+    "Listened to an album because of the producer, not the artist?",
+    "Have recommended an album to someone?",
+    "Have been disappointed by someone else's reaction to an album you love?",
+    "Have introduced someone to their new favorite album?",
+    "Have ruined an album for yourself by overplaying it?",
+    "Have changed your profile picture, bio, or aesthetic because of an album?",
+    "Have bought merch because of an album?",
+    "Have framed or displayed album art in your room?",
+    "Have tried to guess someone's personality from their album taste?",
+    "Have listened to an album leak before its official release?",
+    "Have spent over 100 euros / dollars on a single album or album-related item?",
+    "Have listened to an album considered one of the worst of all time?",
+    "Have acted pretentious about an album?",
+    "Have tattooed or considered tattooing something album-related on yourself?",
+    "Have been embarrassed by how much you like an album?",
+    "Have cared about the track order of an album?",
+    "Have bragged about knowing a niche album?"
+  ];
+
+  let allData = [];
+  let currentTab = 'most';
+
+  // LOGIN
+  document.getElementById('loginBtn').addEventListener('click', login);
+  document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+  function login() {
+    const val = document.getElementById('passwordInput').value;
+    if (val === PASSWORD) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      loadData();
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+    }
+  }
+
+  document.getElementById('refreshBtn').addEventListener('click', loadData);
+
+  async function loadData() {
+    document.getElementById('loadingMsg').style.display = 'block';
+    document.getElementById('dashContent').style.display = 'none';
+
+    try {
+      const snapshot = await getDocs(collection(db, 'results'));
+      allData = snapshot.docs.map(d => d.data());
+      renderDashboard();
+    } catch (e) {
+      document.getElementById('loadingMsg').textContent = 'Error loading data. Check Firebase rules.';
+      console.error(e);
+    }
+  }
+
+  function renderDashboard() {
+    if (allData.length === 0) {
+      document.getElementById('loadingMsg').textContent = 'No submissions yet.';
+      return;
+    }
+
+    document.getElementById('loadingMsg').style.display = 'none';
+    document.getElementById('dashContent').style.display = 'block';
+
+    const scores = allData.map(d => d.score).sort((a, b) => a - b);
+    const total = scores.length;
+    const avg = Math.round(scores.reduce((a, b) => a + b, 0) / total);
+    const median = scores[Math.floor(total / 2)];
+    const high = scores[total - 1];
+    const low = scores[0];
+
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statAvg').textContent = avg;
+    document.getElementById('statHigh').textContent = high;
+    document.getElementById('statLow').textContent = low;
+    document.getElementById('statMedian').textContent = median;
+
+    // Score distribution
+    const bands = [
+      { label: '90–100', min: 90, max: 100 },
+      { label: '70–89',  min: 70, max: 89 },
+      { label: '40–69',  min: 40, max: 69 },
+      { label: '15–39',  min: 15, max: 39 },
+      { label: '0–14',   min: 0,  max: 14 },
+    ];
+    const maxBandCount = Math.max(...bands.map(b => scores.filter(s => s >= b.min && s <= b.max).length));
+    document.getElementById('distBars').innerHTML = bands.map(b => {
+      const count = scores.filter(s => s >= b.min && s <= b.max).length;
+      const pct = maxBandCount > 0 ? Math.round((count / maxBandCount) * 100) : 0;
+      return `<div class="dist-bar-row">
+        <div class="dist-label">${b.label}</div>
+        <div class="dist-bar-wrap"><div class="dist-bar" style="width:${pct}%"></div></div>
+        <div class="dist-count">${count}</div>
+      </div>`;
+    }).join('');
+
+    // Per-question counts
+    const qCounts = new Array(prompts.length).fill(0);
+    allData.forEach(d => {
+      if (d.checkedIndexes) d.checkedIndexes.forEach(i => { if (i < prompts.length) qCounts[i]++; });
+    });
+
+    window._qCounts = qCounts;
+    window._total = total;
+    renderQuestions(currentTab);
+  }
+
+  window.showTab = function(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.q-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+    renderQuestions(tab);
+  };
+
+  function renderQuestions(tab) {
+    const qCounts = window._qCounts;
+    const total = window._total;
+    if (!qCounts) return;
+
+    let indexed = prompts.map((q, i) => ({ q, i, count: qCounts[i], pct: total > 0 ? Math.round((qCounts[i] / total) * 100) : 0 }));
+
+    if (tab === 'most') indexed = indexed.sort((a, b) => b.count - a.count).slice(0, 20);
+    else if (tab === 'least') indexed = indexed.sort((a, b) => a.count - b.count).slice(0, 20);
+
+    document.getElementById('questionsList').innerHTML = indexed.map(({ q, i, count, pct }) => `
+      <div class="q-row">
+        <div><span class="q-num">${i + 1}. </span>${q}</div>
+        <div class="q-pct">${pct}%</div>
+        <div class="q-bar-wrap"><div class="q-bar" style="width:${pct}%"></div></div>
+      </div>
+    `).join('');
+  }
+</script>
+</body>
+</html>
