@@ -382,6 +382,17 @@
             <option value="">All countries</option>
           </select>
         </div>
+        <div class="filter-field">
+          <select id="filterContinent" onchange="applyFilters()">
+            <option value="">All continents</option>
+            <option value="Africa">Africa</option>
+            <option value="Asia">Asia</option>
+            <option value="Europe">Europe</option>
+            <option value="North America">North America</option>
+            <option value="South America">South America</option>
+            <option value="Oceania">Oceania</option>
+          </select>
+        </div>
         <button onclick="clearFilters()" class="clear-btn">Clear filters</button>
       </div>
     </div>
@@ -594,12 +605,31 @@
       countries.map(c => `<option value="${c}">${c}</option>`).join('');
   }
 
+
+  const continentMap = {
+    'Africa': ['Algeria','Angola','Benin','Botswana','Burkina Faso','Burundi','Cameroon','Chad','Congo','Democratic Republic of the Congo','Egypt','Ethiopia','Ghana','Guinea','Ivory Coast','Kenya','Libya','Madagascar','Mali','Morocco','Mozambique','Niger','Nigeria','Rwanda','Senegal','Somalia','South Africa','Sudan','Tanzania','Tunisia','Uganda','Zambia','Zimbabwe'],
+    'Asia': ['Afghanistan','Armenia','Azerbaijan','Bahrain','Bangladesh','Bhutan','Brunei','Cambodia','China','Cyprus','Georgia','India','Indonesia','Iran','Iraq','Israel','Japan','Jordan','Kazakhstan','Kuwait','Kyrgyzstan','Laos','Lebanon','Malaysia','Mongolia','Myanmar','Nepal','North Korea','Oman','Pakistan','Palestine','Philippines','Qatar','Saudi Arabia','Singapore','South Korea','Sri Lanka','Syria','Taiwan','Tajikistan','Thailand','Turkmenistan','United Arab Emirates','Uzbekistan','Vietnam','Yemen'],
+    'Europe': ['Albania','Andorra','Austria','Belarus','Belgium','Bosnia and Herzegovina','Bulgaria','Croatia','Czech Republic','Denmark','Estonia','Finland','France','Germany','Greece','Hungary','Iceland','Ireland','Italy','Kosovo','Latvia','Lithuania','Luxembourg','Malta','Moldova','Montenegro','Netherlands','North Macedonia','Norway','Poland','Portugal','Romania','Russia','Serbia','Slovakia','Slovenia','Spain','Sweden','Switzerland','Ukraine','United Kingdom'],
+    'North America': ['Belize','Canada','Costa Rica','Cuba','Dominican Republic','El Salvador','Guatemala','Haiti','Honduras','Jamaica','Mexico','Nicaragua','Panama','United States'],
+    'South America': ['Argentina','Bolivia','Brazil','Chile','Colombia','Ecuador','Paraguay','Peru','Uruguay','Venezuela'],
+    'Oceania': ['Australia','New Zealand'],
+  };
+
+  function getContinent(country) {
+    for (const [continent, countries] of Object.entries(continentMap)) {
+      if (countries.includes(country)) return continent;
+    }
+    return null;
+  }
+
   function getFilteredData() {
     const age = document.getElementById('filterAge').value;
     const country = document.getElementById('filterCountry').value;
+    const continent = document.getElementById('filterContinent').value;
     return allData.filter(d => {
       if (age && d.age !== age) return false;
       if (country && d.country !== country) return false;
+      if (continent && getContinent(d.country) !== continent) return false;
       return true;
     });
   }
@@ -612,6 +642,7 @@
   window.clearFilters = function() {
     document.getElementById('filterAge').value = '';
     document.getElementById('filterCountry').value = '';
+    document.getElementById('filterContinent').value = '';
     renderWithData(allData);
   };
 
@@ -638,9 +669,22 @@
       return `<div class="demo-row"><span>${c}</span><span class="pct">${pct}% (${n})</span></div>`;
     }).join('') || '<div class="demo-row"><span>No data yet</span></div>';
 
+    const continentCounts = {};
+    data.forEach(d => {
+      if (d.country) {
+        const c = getContinent(d.country);
+        if (c) continentCounts[c] = (continentCounts[c] || 0) + 1;
+      }
+    });
+    const continentHtml = Object.entries(continentCounts).sort((a,b) => b[1]-a[1]).map(([c,n]) => {
+      const pct = Math.round((n/total)*100);
+      return `<div class="demo-row"><span>${c}</span><span class="pct">${pct}% (${n})</span></div>`;
+    }).join('') || '<div class="demo-row"><span>No data yet</span></div>';
+
     document.getElementById('demoStats').innerHTML = `
       <div class="demo-block"><div class="demo-title">Age Distribution</div>${ageHtml}</div>
       <div class="demo-block"><div class="demo-title">Top Countries</div>${countryHtml}</div>
+      <div class="demo-block"><div class="demo-title">By Continent</div>${continentHtml}</div>
     `;
   }
 
