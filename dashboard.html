@@ -222,6 +222,91 @@
     .demo-row .pct { color: var(--accent); font-weight: 700; }
     .filter-note { font-size: 0.75rem; color: var(--muted); font-style: italic; margin-bottom: 16px; }
 
+
+    .submissions-section { margin-bottom: 36px; }
+    .submission-card {
+      background: var(--paper);
+      border: 1px solid rgba(108,82,38,0.16);
+      margin-bottom: 8px;
+    }
+    .submission-header {
+      display: grid;
+      grid-template-columns: 60px 1fr 1fr 1fr 80px;
+      align-items: center;
+      padding: 12px 16px;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .submission-header:hover { background: rgba(0,0,0,0.03); }
+    .sub-score {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--accent);
+      font-family: Georgia, serif;
+    }
+    .sub-meta { font-size: 0.78rem; color: var(--muted); }
+    .sub-meta span { display: block; }
+    .sub-time { font-size: 0.72rem; color: var(--muted); }
+    .sub-expand {
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: right;
+    }
+    .submission-questions {
+      display: none;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.02);
+    }
+    .submission-questions.open { display: block; }
+    .sub-q-item {
+      font-size: 0.8rem;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      color: var(--ink);
+    }
+    .sub-q-item:last-child { border-bottom: none; }
+    .sub-q-num { color: var(--muted); margin-right: 6px; }
+    .submissions-sort {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .submissions-sort label { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+    .submissions-sort select {
+      padding: 6px 24px 6px 10px;
+      font: inherit;
+      font-size: 0.8rem;
+      background: #fbfaf6;
+      border: 1px solid #8c8c8c;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+    .sub-count { font-size: 0.75rem; color: var(--muted); font-style: italic; margin-left: auto; }
+
+
+    .sub-delete {
+      background: transparent;
+      border: 1px solid rgba(157,37,15,0.3);
+      color: var(--accent);
+      font: inherit;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      cursor: pointer;
+      min-width: unset;
+      margin-left: 8px;
+    }
+    .sub-delete:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .submission-header { position: relative; }
+
     .loading {
       text-align: center;
       padding: 60px;
@@ -320,7 +405,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
   const PASSWORD = "Jigujajiguja2@";
 
@@ -465,7 +550,7 @@
 
     try {
       const snapshot = await getDocs(collection(db, 'results'));
-      allData = snapshot.docs.map(d => d.data());
+      allData = snapshot.docs.map(d => ({ ...d.data(), _id: d.id }));
       renderDashboard();
     } catch (e) {
       document.getElementById('loadingMsg').textContent = 'Error loading data. Check Firebase rules.';
@@ -482,6 +567,7 @@
     document.getElementById('dashContent').style.display = 'block';
     populateCountryFilter();
     renderWithData(allData);
+    renderSubmissions();
   }
 
   // Populate country filter
@@ -608,6 +694,67 @@
       </div>
     `).join('');
   }
+
+  window.renderSubmissions = function() {
+    const sort = document.getElementById('sortSelect').value;
+    let data = [...allData];
+
+    if (sort === 'newest') data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    else if (sort === 'oldest') data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    else if (sort === 'highest') data.sort((a, b) => b.score - a.score);
+    else if (sort === 'lowest') data.sort((a, b) => a.score - b.score);
+
+    document.getElementById('subCount').textContent = `${data.length} submission${data.length !== 1 ? 's' : ''}`;
+
+    document.getElementById('submissionsList').innerHTML = data.map((d, idx) => {
+      const date = d.timestamp ? new Date(d.timestamp).toLocaleString('en-GB', { timeZone: 'Europe/Bucharest', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' }) : 'Unknown time';
+      const age = d.age || '—';
+      const country = d.country || '—';
+      const questions = d.checkedIndexes && d.checkedIndexes.length > 0
+        ? d.checkedIndexes.map(i => `<div class="sub-q-item"><span class="sub-q-num">${i+1}.</span>${prompts[i] || 'Unknown question'}</div>`).join('')
+        : '<div class="sub-q-item" style="color:var(--muted);font-style:italic">No questions checked</div>';
+
+      return `
+        <div class="submission-card">
+          <div class="submission-header" onclick="toggleSub(${idx})">
+            <div class="sub-score">${d.score}</div>
+            <div class="sub-meta"><span>Age: ${age}</span></div>
+            <div class="sub-meta"><span>Country: ${country}</span></div>
+            <div class="sub-time">${date}</div>
+            <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;">
+            <div class="sub-expand" id="expand-${idx}">▼ expand</div>
+            <button class="sub-delete" onclick="event.stopPropagation(); deleteSub('${d._id}')">✕ delete</button>
+          </div>
+          </div>
+          <div class="submission-questions" id="subq-${idx}">
+            <div style="font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Checked questions (${d.checkedIndexes ? d.checkedIndexes.length : 0})</div>
+            ${questions}
+          </div>
+        </div>`;
+    }).join('');
+  };
+
+  window.toggleSub = function(idx) {
+    const el = document.getElementById('subq-' + idx);
+    const btn = document.getElementById('expand-' + idx);
+    const isOpen = el.classList.toggle('open');
+    btn.textContent = isOpen ? '▲ collapse' : '▼ expand';
+  };
+
+
+  window.deleteSub = async function(id) {
+    if (!confirm('Delete this submission? This cannot be undone.')) return;
+    try {
+      await deleteDoc(doc(db, 'results', id));
+      allData = allData.filter(d => d._id !== id);
+      renderWithData(allData);
+      renderSubmissions();
+    } catch(e) {
+      alert('Error deleting submission.');
+      console.error(e);
+    }
+  };
+
 </script>
 </body>
 </html>
