@@ -540,5 +540,42 @@
 
     renderQuestions();
   </script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCSpAHM1filCLSmU4WjWWMowj9LsEykVc8",
+      authDomain: "albumpuritytest.firebaseapp.com",
+      projectId: "albumpuritytest",
+      storageBucket: "albumpuritytest.firebasestorage.app",
+      messagingSenderId: "254155293464",
+      appId: "1:254155293464:web:b680a06ab6fda2fc5a546d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    document.getElementById('scoreBtn').addEventListener('click', async () => {
+      const checkboxes = document.querySelectorAll('.question-item input');
+      const checkedIndexes = [];
+      checkboxes.forEach((cb, i) => { if (cb.checked) checkedIndexes.push(i); });
+      const total = checkboxes.length;
+      const checked = checkedIndexes.length;
+      const score = Math.round(((total - checked) / total) * 100);
+
+      try {
+        await addDoc(collection(db, 'results'), {
+          score,
+          checkedCount: checked,
+          checkedIndexes,
+          timestamp: new Date().toISOString()
+        });
+      } catch (e) {
+        console.error('Firebase write error:', e);
+      }
+    });
+  </script>
 </body>
 </html>
