@@ -292,6 +292,90 @@
         line-height: 1.48;
       }
     }
+
+    .demographics {
+      max-width: 720px;
+      margin: 6px auto 0;
+      border-top: 1px solid rgba(0,0,0,0.1);
+      padding-top: 8px;
+    }
+
+    .demographics-label {
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    .demographics-fields {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .demo-field {
+      position: relative;
+      flex: 1;
+      min-width: 200px;
+      max-width: 280px;
+    }
+
+    .demo-field select,
+    .demo-field input[type="text"] {
+      width: 100%;
+      padding: 9px 32px 9px 12px;
+      font: inherit;
+      font-size: 0.9rem;
+      background: #fbfaf6;
+      border: 1px solid #8c8c8c;
+      border-radius: 2px;
+      appearance: none;
+      -webkit-appearance: none;
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    .demo-field select:focus,
+    .demo-field input[type="text"]:focus {
+      outline: 2px solid rgba(143,37,20,0.25);
+    }
+
+    .demo-arrow {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .country-wrap { position: relative; }
+    .country-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0; right: 0;
+      background: #fbfaf6;
+      border: 1px solid #8c8c8c;
+      border-top: none;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+    }
+    .country-dropdown.open { display: block; }
+    .country-option {
+      padding: 8px 12px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    .country-option:hover { background: #ddcfb4; }
+    .country-option.selected { background: #e8dfc8; }
+
   </style>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-8YSZW9YX4S"></script>
@@ -318,9 +402,31 @@
 
     <ol class="question-list" id="questionList"></ol>
 
-    <div class="actions">
+    <div class="demographics">
+      <p class="demographics-label">Optional - About you</p>
+      <div class="demographics-fields">
+        <div class="demo-field">
+          <select id="ageSelect">
+            <option value="">Age range (optional)</option>
+            <option value="under18">Under 18</option>
+            <option value="18-24">18 - 24</option>
+            <option value="25-34">25 - 34</option>
+            <option value="35-44">35 - 44</option>
+            <option value="45-59">45 - 59</option>
+            <option value="60+">60+</option>
+          </select>
+          <span class="demo-arrow">▼</span>
+        </div>
+        <div class="demo-field country-wrap">
+          <input type="text" id="countryInput" placeholder="Country (optional)" autocomplete="off" />
+          <span class="demo-arrow">▼</span>
+          <div class="country-dropdown" id="countryDropdown"></div>
+        </div>
+      </div>
+    </div>
+
+        <div class="actions">
       <button id="scoreBtn">Calculate My Score</button>
-      <button id="resetBtn" class="secondary">Clear checkboxes</button>
     </div>
 
     
@@ -451,7 +557,6 @@
 
     const questionList = document.getElementById('questionList');
     const scoreBtn = document.getElementById('scoreBtn');
-    const resetBtn = document.getElementById('resetBtn');
     const resultPage = document.getElementById('resultPage');
     const scoreValue = document.getElementById('scoreValue');
     const resultCopy = document.getElementById('resultCopy');
@@ -509,11 +614,7 @@
     }
 
     scoreBtn.addEventListener('click', calculateScore);
-    resetBtn.addEventListener('click', () => {
-      document.querySelectorAll('.question-item input').forEach((input) => {
-        input.checked = false;
-      });
-    });
+
     document.getElementById('retakeBtn').addEventListener('click', resetForm);
 
     document.getElementById('shareBtn').addEventListener('click', () => {
@@ -566,10 +667,14 @@
       const score = Math.round(((total - checked) / total) * 100);
 
       try {
+        const age = document.getElementById('ageSelect').value || null;
+        const country = document.getElementById('countryInput').value.trim() || null;
         await addDoc(collection(db, 'results'), {
           score,
           checkedCount: checked,
           checkedIndexes,
+          age,
+          country,
           timestamp: new Date().toISOString()
         });
       } catch (e) {
@@ -577,5 +682,45 @@
       }
     });
   </script>
+
+  <script>
+    const countries = ["Afghanistan","Albania","Algeria","Andorra","Angola","Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Belarus","Belgium","Belize","Benin","Bhutan","Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cambodia","Cameroon","Canada","Chad","Chile","China","Colombia","Congo","Costa Rica","Croatia","Cuba","Cyprus","Czech Republic","Denmark","Dominican Republic","Ecuador","Egypt","El Salvador","Estonia","Ethiopia","Finland","France","Georgia","Germany","Ghana","Greece","Guatemala","Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kosovo","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Libya","Lithuania","Luxembourg","Malaysia","Mali","Malta","Mexico","Moldova","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway","Oman","Pakistan","Palestine","Panama","Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania","Russia","Rwanda","Saudi Arabia","Senegal","Serbia","Singapore","Slovakia","Slovenia","Somalia","South Africa","South Korea","Spain","Sri Lanka","Sudan","Sweden","Switzerland","Syria","Taiwan","Tajikistan","Tanzania","Thailand","Tunisia","Turkey","Turkmenistan","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"];
+
+    const countryInput = document.getElementById('countryInput');
+    const countryDropdown = document.getElementById('countryDropdown');
+    let selectedCountry = '';
+
+    function renderCountries(filter) {
+      const filtered = filter ? countries.filter(c => c.toLowerCase().startsWith(filter.toLowerCase())) : countries;
+      countryDropdown.innerHTML = filtered.map(c =>
+        `<div class="country-option${c === selectedCountry ? ' selected' : ''}" data-value="${c}">${c}</div>`
+      ).join('');
+    }
+
+    countryInput.addEventListener('focus', () => {
+      renderCountries(countryInput.value);
+      countryDropdown.classList.add('open');
+    });
+
+    countryInput.addEventListener('input', () => {
+      selectedCountry = '';
+      renderCountries(countryInput.value);
+      countryDropdown.classList.add('open');
+    });
+
+    countryDropdown.addEventListener('mousedown', (e) => {
+      const opt = e.target.closest('.country-option');
+      if (opt) {
+        selectedCountry = opt.dataset.value;
+        countryInput.value = selectedCountry;
+        countryDropdown.classList.remove('open');
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.country-wrap')) countryDropdown.classList.remove('open');
+    });
+  </script>
+
 </body>
 </html>
