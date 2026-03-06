@@ -184,6 +184,44 @@
     .q-bar-wrap { background: var(--card); height: 8px; }
     .q-bar { background: var(--accent); height: 100%; }
 
+
+    .filter-section { margin-bottom: 28px; }
+    .filter-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .filter-field select {
+      padding: 8px 28px 8px 10px;
+      font: inherit;
+      font-size: 0.85rem;
+      background: #fbfaf6;
+      border: 1px solid #8c8c8c;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      min-width: 160px;
+    }
+    .clear-btn {
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--ink);
+      font: inherit;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .clear-btn:hover { background: var(--ink); color: #fff; }
+    .demo-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .demo-block { background: var(--paper); border: 1px solid rgba(108,82,38,0.16); padding: 16px 20px; }
+    .demo-block .demo-title { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    .demo-row { display: flex; justify-content: space-between; font-size: 0.82rem; padding: 4px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .demo-row:last-child { border-bottom: none; }
+    .demo-row .pct { color: var(--accent); font-weight: 700; }
+    .filter-note { font-size: 0.75rem; color: var(--muted); font-style: italic; margin-bottom: 16px; }
+
     .loading {
       text-align: center;
       padding: 60px;
@@ -238,6 +276,34 @@
     <div class="dist-section">
       <div class="section-title">Score Distribution</div>
       <div id="distBars"></div>
+
+
+    <div class="filter-section">
+      <div class="section-title">Filter Results</div>
+      <div class="filter-row">
+        <div class="filter-field">
+          <select id="filterAge" onchange="applyFilters()">
+            <option value="">All ages</option>
+            <option value="under18">Under 18</option>
+            <option value="18-24">18 - 24</option>
+            <option value="25-34">25 - 34</option>
+            <option value="35-44">35 - 44</option>
+            <option value="45-59">45 - 59</option>
+            <option value="60+">60+</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <select id="filterCountry" onchange="applyFilters()">
+            <option value="">All countries</option>
+          </select>
+        </div>
+        <button onclick="clearFilters()" class="clear-btn">Clear filters</button>
+      </div>
+    </div>
+
+    <div class="demo-stats-grid" id="demoStats"></div>
+
+
     </div>
 
     <div class="questions-section">
@@ -412,48 +478,106 @@
       document.getElementById('loadingMsg').textContent = 'No submissions yet.';
       return;
     }
-
     document.getElementById('loadingMsg').style.display = 'none';
     document.getElementById('dashContent').style.display = 'block';
+    populateCountryFilter();
+    renderWithData(allData);
+  }
 
-    const scores = allData.map(d => d.score).sort((a, b) => a - b);
-    const total = scores.length;
-    const avg = Math.round(scores.reduce((a, b) => a + b, 0) / total);
-    const median = scores[Math.floor(total / 2)];
-    const high = scores[total - 1];
-    const low = scores[0];
+  // Populate country filter
+  function populateCountryFilter() {
+    const countries = [...new Set(allData.map(d => d.country).filter(Boolean))].sort();
+    const sel = document.getElementById('filterCountry');
+    sel.innerHTML = '<option value="">All countries</option>' +
+      countries.map(c => `<option value="${c}">${c}</option>`).join('');
+  }
+
+  function getFilteredData() {
+    const age = document.getElementById('filterAge').value;
+    const country = document.getElementById('filterCountry').value;
+    return allData.filter(d => {
+      if (age && d.age !== age) return false;
+      if (country && d.country !== country) return false;
+      return true;
+    });
+  }
+
+  window.applyFilters = function() {
+    const filtered = getFilteredData();
+    renderWithData(filtered);
+  };
+
+  window.clearFilters = function() {
+    document.getElementById('filterAge').value = '';
+    document.getElementById('filterCountry').value = '';
+    renderWithData(allData);
+  };
+
+  function renderDemoStats(data) {
+    const total = data.length;
+    const ageCounts = {};
+    const countryCounts = {};
+    data.forEach(d => {
+      if (d.age) ageCounts[d.age] = (ageCounts[d.age] || 0) + 1;
+      if (d.country) countryCounts[d.country] = (countryCounts[d.country] || 0) + 1;
+    });
+
+    const ageOrder = ['under18','18-24','25-34','35-44','45-59','60+'];
+    const ageLabels = {'under18':'Under 18','18-24':'18-24','25-34':'25-34','35-44':'35-44','45-59':'45-59','60+':'60+'};
+    const topCountries = Object.entries(countryCounts).sort((a,b) => b[1]-a[1]).slice(0, 8);
+
+    const ageHtml = ageOrder.filter(a => ageCounts[a]).map(a => {
+      const pct = Math.round((ageCounts[a] / total) * 100);
+      return `<div class="demo-row"><span>${ageLabels[a]}</span><span class="pct">${pct}% (${ageCounts[a]})</span></div>`;
+    }).join('') || '<div class="demo-row"><span>No data yet</span></div>';
+
+    const countryHtml = topCountries.map(([c, n]) => {
+      const pct = Math.round((n / total) * 100);
+      return `<div class="demo-row"><span>${c}</span><span class="pct">${pct}% (${n})</span></div>`;
+    }).join('') || '<div class="demo-row"><span>No data yet</span></div>';
+
+    document.getElementById('demoStats').innerHTML = `
+      <div class="demo-block"><div class="demo-title">Age Distribution</div>${ageHtml}</div>
+      <div class="demo-block"><div class="demo-title">Top Countries</div>${countryHtml}</div>
+    `;
+  }
+
+  function renderWithData(data) {
+    const total = data.length;
+    if (total === 0) {
+      document.getElementById('statTotal').textContent = 0;
+      ['statAvg','statHigh','statLow','statMedian'].forEach(id => document.getElementById(id).textContent = '—');
+      document.getElementById('distBars').innerHTML = '';
+      document.getElementById('demoStats').innerHTML = '';
+      document.getElementById('questionsList').innerHTML = '<div style="padding:16px;color:var(--muted);font-style:italic;font-size:0.85rem">No results match this filter.</div>';
+      return;
+    }
+
+    const scores = data.map(d => d.score).sort((a,b) => a-b);
+    const avg = Math.round(scores.reduce((a,b) => a+b, 0) / total);
+    const median = scores[Math.floor(total/2)];
 
     document.getElementById('statTotal').textContent = total;
     document.getElementById('statAvg').textContent = avg;
-    document.getElementById('statHigh').textContent = high;
-    document.getElementById('statLow').textContent = low;
+    document.getElementById('statHigh').textContent = scores[total-1];
+    document.getElementById('statLow').textContent = scores[0];
     document.getElementById('statMedian').textContent = median;
 
-    // Score distribution
     const bands = [
-      { label: '90–100', min: 90, max: 100 },
-      { label: '70–89',  min: 70, max: 89 },
-      { label: '40–69',  min: 40, max: 69 },
-      { label: '15–39',  min: 15, max: 39 },
-      { label: '0–14',   min: 0,  max: 14 },
+      {label:'90–100',min:90,max:100},{label:'70–89',min:70,max:89},
+      {label:'40–69',min:40,max:69},{label:'15–39',min:15,max:39},{label:'0–14',min:0,max:14}
     ];
-    const maxBandCount = Math.max(...bands.map(b => scores.filter(s => s >= b.min && s <= b.max).length));
+    const maxBandCount = Math.max(...bands.map(b => scores.filter(s => s>=b.min && s<=b.max).length), 1);
     document.getElementById('distBars').innerHTML = bands.map(b => {
-      const count = scores.filter(s => s >= b.min && s <= b.max).length;
-      const pct = maxBandCount > 0 ? Math.round((count / maxBandCount) * 100) : 0;
-      return `<div class="dist-bar-row">
-        <div class="dist-label">${b.label}</div>
-        <div class="dist-bar-wrap"><div class="dist-bar" style="width:${pct}%"></div></div>
-        <div class="dist-count">${count}</div>
-      </div>`;
+      const count = scores.filter(s => s>=b.min && s<=b.max).length;
+      const pct = Math.round((count/maxBandCount)*100);
+      return `<div class="dist-bar-row"><div class="dist-label">${b.label}</div><div class="dist-bar-wrap"><div class="dist-bar" style="width:${pct}%"></div></div><div class="dist-count">${count}</div></div>`;
     }).join('');
 
-    // Per-question counts
-    const qCounts = new Array(prompts.length).fill(0);
-    allData.forEach(d => {
-      if (d.checkedIndexes) d.checkedIndexes.forEach(i => { if (i < prompts.length) qCounts[i]++; });
-    });
+    renderDemoStats(data);
 
+    const qCounts = new Array(prompts.length).fill(0);
+    data.forEach(d => { if (d.checkedIndexes) d.checkedIndexes.forEach(i => { if (i < prompts.length) qCounts[i]++; }); });
     window._qCounts = qCounts;
     window._total = total;
     renderQuestions(currentTab);
