@@ -400,6 +400,22 @@
       </div>
       <div id="questionsList"></div>
     </div>
+
+    <div class="submissions-section">
+      <div class="section-title">All Submissions</div>
+      <div class="submissions-sort">
+        <label>Sort by</label>
+        <select id="sortSelect" onchange="renderSubmissions()">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="highest">Highest score first</option>
+          <option value="lowest">Lowest score first</option>
+        </select>
+        <span class="sub-count" id="subCount"></span>
+      </div>
+      <div id="submissionsList"></div>
+    </div>
+
   </div>
 </div>
 
