@@ -670,14 +670,17 @@
       try {
         const age = document.getElementById('ageSelect').value || null;
         const country = document.getElementById('countryInput').value.trim() || null;
+        const isRepeat = localStorage.getItem('apt_submitted') === 'true';
         await addDoc(collection(db, 'results'), {
           score,
           checkedCount: checked,
           checkedIndexes,
           age,
           country,
+          isRepeat,
           timestamp: new Date().toISOString()
         });
+        localStorage.setItem('apt_submitted', 'true');
       } catch (e) {
         console.error('Firebase write error:', e);
       }

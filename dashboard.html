@@ -307,6 +307,19 @@
     .sub-delete:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
     .submission-header { position: relative; }
 
+
+    .repeat-badge {
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: #e8d5a0;
+      color: #7a5c1a;
+      border: 1px solid #c8a84a;
+      padding: 2px 7px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
     .loading {
       text-align: center;
       padding: 60px;
@@ -777,7 +790,7 @@
       return `
         <div class="submission-card">
           <div class="submission-header" onclick="toggleSub(${idx})">
-            <div class="sub-score">${d.score}</div>
+            <div class="sub-score">${d.score}${d.isRepeat ? '<span class="repeat-badge">repeat</span>' : ''}</div>
             <div class="sub-meta"><span>Age: ${age}</span></div>
             <div class="sub-meta"><span>Country: ${country}</span></div>
             <div class="sub-time">${date}</div>
