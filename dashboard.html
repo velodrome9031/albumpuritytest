@@ -231,7 +231,7 @@
     }
     .submission-header {
       display: grid;
-      grid-template-columns: 60px 1fr 1fr 1fr 80px;
+      grid-template-columns: 110px 1fr 1fr 1fr 80px;
       align-items: center;
       padding: 12px 16px;
       gap: 12px;
@@ -790,7 +790,10 @@
       return `
         <div class="submission-card">
           <div class="submission-header" onclick="toggleSub(${idx})">
-            <div class="sub-score">${d.score}${d.isRepeat ? '<span class="repeat-badge">repeat</span>' : ''}</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="sub-score">${d.score}</div>
+              ${d.isRepeat ? '<span class="repeat-badge">REP</span>' : ''}
+            </div>
             <div class="sub-meta"><span>Age: ${age}</span></div>
             <div class="sub-meta"><span>Country: ${country}</span></div>
             <div class="sub-time">${date}</div>
