@@ -406,6 +406,10 @@
             <option value="Oceania">Oceania</option>
           </select>
         </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;cursor:pointer;">
+          <input type="checkbox" id="excludeRepeats" onchange="applyFilters()" style="cursor:pointer;width:14px;height:14px;">
+          Exclude repeats
+        </label>
         <button onclick="clearFilters()" class="clear-btn">Clear filters</button>
       </div>
     </div>
@@ -639,10 +643,12 @@
     const age = document.getElementById('filterAge').value;
     const country = document.getElementById('filterCountry').value;
     const continent = document.getElementById('filterContinent').value;
+    const excludeRepeats = document.getElementById('excludeRepeats').checked;
     return allData.filter(d => {
       if (age && d.age !== age) return false;
       if (country && d.country !== country) return false;
       if (continent && getContinent(d.country) !== continent) return false;
+      if (excludeRepeats && d.isRepeat) return false;
       return true;
     });
   }
@@ -656,6 +662,7 @@
     document.getElementById('filterAge').value = '';
     document.getElementById('filterCountry').value = '';
     document.getElementById('filterContinent').value = '';
+    document.getElementById('excludeRepeats').checked = false;
     renderWithData(allData);
   };
 
