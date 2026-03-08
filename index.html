@@ -669,7 +669,7 @@
 
       try {
         const age = document.getElementById('ageSelect').value || null;
-        const country = document.getElementById('countryInput').value.trim() || null;
+        const country = validCountrySelected ? document.getElementById('countryInput').value.trim() || null : null;
         const isRepeat = localStorage.getItem('apt_submitted') === 'true';
         await addDoc(collection(db, 'results'), {
           score,
@@ -692,6 +692,7 @@
 
     const countryInput = document.getElementById('countryInput');
     const countryDropdown = document.getElementById('countryDropdown');
+    let validCountrySelected = false;
     let selectedCountry = '';
 
     function renderCountries(filter) {
@@ -707,6 +708,7 @@
     });
 
     countryInput.addEventListener('input', () => {
+      validCountrySelected = false;
       selectedCountry = '';
       renderCountries(countryInput.value);
       countryDropdown.classList.add('open');
@@ -717,12 +719,16 @@
       if (opt) {
         selectedCountry = opt.dataset.value;
         countryInput.value = selectedCountry;
+        validCountrySelected = true;
         countryDropdown.classList.remove('open');
       }
     });
 
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.country-wrap')) countryDropdown.classList.remove('open');
+      if (!e.target.closest('.country-wrap')) {
+        countryDropdown.classList.remove('open');
+        if (!validCountrySelected) countryInput.value = '';
+      }
     });
   </script>
 
